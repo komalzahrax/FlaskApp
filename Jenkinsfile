@@ -1,17 +1,13 @@
 pipeline {
   agent any
-
   stages {
     stage('Checkout') {
-      steps {
-        checkout scm
-      }
+      steps { checkout scm }
     }
 
-    stage('Setup Python venv') {
+    stage('Setup venv & Install') {
       steps {
         bat '''
-          python --version
           python -m venv venv
           call venv\\Scripts\\activate
           python -m pip install --upgrade pip
@@ -20,11 +16,12 @@ pipeline {
       }
     }
 
-    stage('Sanity Check') {
+    stage('Basic Checks / Tests') {
       steps {
         bat '''
           call venv\\Scripts\\activate
           python -m compileall .
+          if exist tests pytest -q
         '''
       }
     }
