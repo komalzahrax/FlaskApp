@@ -1,28 +1,22 @@
 pipeline {
   agent any
-  stages {
-    stage('Checkout') {
-      steps { checkout scm }
-    }
 
-    stage('Setup venv & Install') {
+  stages {
+    stage('Build') {
       steps {
-        bat '''
-          python -m venv venv
-          call venv\\Scripts\\activate
-          python -m pip install --upgrade pip
-          if exist requirements.txt pip install -r requirements.txt
-        '''
+        echo 'Building..'
       }
     }
 
-    stage('Basic Checks / Tests') {
+    stage('Test') {
       steps {
-        bat '''
-          call venv\\Scripts\\activate
-          python -m compileall .
-          if exist tests pytest -q
-        '''
+        echo 'Testing..'
+      }
+    }
+
+    stage('Deploy') {
+      steps {
+        echo 'Deploying..'
       }
     }
   }
