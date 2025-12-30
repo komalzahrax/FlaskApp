@@ -7,7 +7,7 @@ pipeline {
   }
 
   environment {
-    VENV = "${WORKSPACE}/.venv"
+    VENV = "${WORKSPACE}\\.venv"
     PYTHONUNBUFFERED = "1"
   }
 
@@ -15,64 +15,66 @@ pipeline {
 
     stage('Checkout') {
       steps {
-        // pulls from GitHub (configured in Jenkins job)
         checkout scm
       }
     }
 
     stage('Setup Python venv') {
       steps {
-        sh '''
-          python3 --version
-          python3 -m venv .venv
-          . .venv/bin/activate
+        bat """
+          python --version
+          python -m venv .venv
+          call .venv\\Scripts\\activate
           python -m pip install --upgrade pip
-        '''
+        """
       }
     }
 
     stage('Install dependencies') {
       steps {
-        sh '''
-          . .venv/bin/activate
+        bat """
+          call .venv\\Scripts\\activate
           pip install -r requirements.txt
           pip install pytest pytest-cov
-        '''
+        """
       }
     }
 
     stage('Unit Tests (pytest)') {
       steps {
-        sh '''
-          . .venv/bin/activate
-          mkdir -p reports
-          pytest -q --junitxml=reports/junit.xml
-        '''
-        junit 'reports/junit.xml'
+        bat """
+          call .venv\\Scripts\\activate
+          if not exist reports mkdir reports
+          pytest -q --junitxml=reports\\junit.xml
+        """
+      }
+      post {
+        always {
+          junit 'reports/junit.xml'
+        }
       }
     }
 
     stage('Build (package artifact)') {
       steps {
-        sh '''
-          mkdir -p dist
-          tar --exclude=.venv --exclude=dist --exclude=reports -czf dist/flaskapp-${BUILD_NUMBER}.tgz .
-        '''
-        archiveArtifacts artifacts: 'dist/*.tgz', fingerprint: true
+        bat """
+          if not exist dist mkdir dist
+          powershell -NoProfile -Command ^
+            "Compress-Archive -Path * -DestinationPath dist\\flaskapp-%BUILD_NUMBER%.zip -Force"
+        """
+        archiveArtifacts artifacts: 'dist/*.zip', fingerprint: true
       }
     }
 
     stage('Deploy (simulate)') {
       steps {
-        sh '''
-          rm -rf /tmp/flaskapp_target
-          mkdir -p /tmp/flaskapp_target
-          tar -xzf dist/flaskapp-${BUILD_NUMBER}.tgz -C /tmp/flaskapp_target
-
-          # “simulate restart”
-          date > /tmp/flaskapp_target/DEPLOYED_AT.txt
-          echo "Deploy complete. Simulated restart done."
-        '''
+        bat """
+          if exist C:\\tmp\\flaskapp_target rmdir /S /Q C:\\tmp\\flaskapp_target
+          mkdir C:\\tmp\\flaskapp_target
+          powershell -NoProfile -Command ^
+            "Expand-Archive -Path dist\\flaskapp-%BUILD_NUMBER%.zip -DestinationPath C:\\tmp\\flaskapp_target -Force"
+          echo %DATE% %TIME% > C:\\tmp\\flaskapp_target\\DEPLOYED_AT.txt
+        """
       }
     }
   }
