@@ -44,9 +44,8 @@ pipeline {
       steps {
         bat """
           call .venv\\Scripts\\activate
-          set PYTHONPATH=%WORKSPACE%
           if not exist reports mkdir reports
-          python -m pytest -q --junitxml=reports\\junit.xml
+          pytest -q --junitxml=reports\\junit.xml
         """
       }
       post {
@@ -75,7 +74,6 @@ pipeline {
           powershell -NoProfile -Command ^
             "Expand-Archive -Path dist\\flaskapp-%BUILD_NUMBER%.zip -DestinationPath C:\\tmp\\flaskapp_target -Force"
           echo %DATE% %TIME% > C:\\tmp\\flaskapp_target\\DEPLOYED_AT.txt
-          echo Deploy simulation complete.
         """
       }
     }
